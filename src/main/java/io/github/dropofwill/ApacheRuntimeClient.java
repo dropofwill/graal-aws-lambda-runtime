@@ -2,8 +2,8 @@ package io.github.dropofwill;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.util.UUID;
 import org.apache.http.HttpResponse;
+import org.apache.http.HttpVersion;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.methods.RequestBuilder;
@@ -31,6 +31,7 @@ public class ApacheRuntimeClient implements RuntimeClient {
         HttpUriRequest request = RequestBuilder.get()
             .setUri(String.format("%s/%s/runtime/invocation/next",
                 Config.getEndpoint(), RuntimeClient.RUNTIME_API_VERSION))
+            .setVersion(HttpVersion.HTTP_1_1)
             // Infinite socket timeout for long polling
 //            .setConfig(RequestConfig.custom().setSocketTimeout(-1).build())
             .build();
@@ -49,12 +50,13 @@ public class ApacheRuntimeClient implements RuntimeClient {
         BasicHttpEntity body = new BasicHttpEntity();
         body.setContent(new ByteArrayInputStream(responseBody));
         String uri = String.format("%s/%s/runtime/invocation/%s/response",
-                Config.getEndpoint(), RuntimeClient.RUNTIME_API_VERSION, UUID.randomUUID());
+                Config.getEndpoint(), RuntimeClient.RUNTIME_API_VERSION, requestId);
         logger.info(uri);
 
         HttpUriRequest request = RequestBuilder.post()
             .setUri(uri)
             .setEntity(body)
+            .setVersion(HttpVersion.HTTP_1_1)
             .build();
 
         try {
@@ -75,6 +77,7 @@ public class ApacheRuntimeClient implements RuntimeClient {
         HttpUriRequest request = RequestBuilder.post()
             .setUri(uri)
             .setEntity(body)
+            .setVersion(HttpVersion.HTTP_1_1)
             .build();
 
         try {
@@ -93,6 +96,7 @@ public class ApacheRuntimeClient implements RuntimeClient {
             .setUri(String.format("%s/%s/runtime/init/error",
                 Config.getEndpoint(), RuntimeClient.RUNTIME_API_VERSION))
             .setEntity(body)
+            .setVersion(HttpVersion.HTTP_1_1)
             .build();
 
         try {
