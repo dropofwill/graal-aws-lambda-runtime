@@ -1,13 +1,12 @@
 package io.github.dropofwill;
 
-import io.github.dropofwill.RuntimeClient.LambdaEvent;
 import org.apache.http.HttpResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class Runtime {
     private final Logger logger = LoggerFactory.getLogger(Runtime.class);
-    private final RuntimeClient client;
+    private final ApacheRuntimeClient client;
 
     private Runtime() {
         this.client = new ApacheRuntimeClient();

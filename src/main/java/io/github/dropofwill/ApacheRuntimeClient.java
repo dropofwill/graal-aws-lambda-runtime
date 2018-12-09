@@ -1,7 +1,12 @@
 package io.github.dropofwill;
 
+import io.github.dropofwill.RuntimeClient.LambdaEvent;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Optional;
+import org.apache.http.Header;
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpVersion;
 import org.apache.http.client.HttpClient;
@@ -16,7 +21,8 @@ import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ApacheRuntimeClient implements RuntimeClient {
+public class ApacheRuntimeClient {
+    public static final String RUNTIME_API_VERSION = "2018-06-01";
     private final HttpClient client;
     private final Logger logger = LoggerFactory.getLogger(ApacheRuntimeClient.class);
 
@@ -30,11 +36,10 @@ public class ApacheRuntimeClient implements RuntimeClient {
             .build();
     }
 
-    @Override
     public LambdaEvent next() {
         HttpUriRequest request = RequestBuilder.get()
             .setUri(String.format("%s/%s/runtime/invocation/next",
-                Config.getEndpoint(), RuntimeClient.RUNTIME_API_VERSION))
+                Config.getEndpoint(), ApacheRuntimeClient.RUNTIME_API_VERSION))
             .setVersion(HttpVersion.HTTP_1_1)
             // Infinite socket timeout for long polling
             .setConfig(RequestConfig.custom().setSocketTimeout(-1).build())
@@ -51,12 +56,11 @@ public class ApacheRuntimeClient implements RuntimeClient {
         }
     }
 
-    @Override
     public HttpResponse succes(String requestId, byte[] responseBody) {
         BasicHttpEntity body = new BasicHttpEntity();
         body.setContent(new ByteArrayInputStream(responseBody));
         String uri = String.format("%s/%s/runtime/invocation/%s/response",
-                Config.getEndpoint(), RuntimeClient.RUNTIME_API_VERSION, requestId);
+                Config.getEndpoint(), ApacheRuntimeClient.RUNTIME_API_VERSION, requestId);
         logger.info(uri);
 
         HttpResponse response = null;
@@ -76,12 +80,11 @@ public class ApacheRuntimeClient implements RuntimeClient {
         return response;
     }
 
-    @Override
     public void invocationError(String requestId, byte[] failureBody) {
         BasicHttpEntity body = new BasicHttpEntity();
         body.setContent(new ByteArrayInputStream(failureBody));
         String uri = String.format("%s/%s/runtime/invocation/%s/error",
-                Config.getEndpoint(), RuntimeClient.RUNTIME_API_VERSION, requestId);
+                Config.getEndpoint(), ApacheRuntimeClient.RUNTIME_API_VERSION, requestId);
         logger.info(uri);
 
         HttpResponse response = null;
@@ -100,7 +103,6 @@ public class ApacheRuntimeClient implements RuntimeClient {
         }
     }
 
-    @Override
     public void initializationError(byte[] failureBody) {
         BasicHttpEntity body = new BasicHttpEntity();
         body.setContent(new ByteArrayInputStream(failureBody));
@@ -108,7 +110,7 @@ public class ApacheRuntimeClient implements RuntimeClient {
         HttpResponse response = null;
         HttpUriRequest request = RequestBuilder.post()
             .setUri(String.format("%s/%s/runtime/init/error",
-                Config.getEndpoint(), RuntimeClient.RUNTIME_API_VERSION))
+                Config.getEndpoint(), ApacheRuntimeClient.RUNTIME_API_VERSION))
             .setEntity(body)
             .setVersion(HttpVersion.HTTP_1_1)
             .build();
@@ -122,4 +124,85 @@ public class ApacheRuntimeClient implements RuntimeClient {
         }
     }
 
+    public class LambdaEvent {
+        private final byte[] event;
+        private final Context context;
+
+        LambdaEvent(byte[] event, Context context) {
+            this.event = event;
+            this.context = context;
+        }
+
+        public static LambdaEvent fromResponse(HttpResponse response) {
+            byte[] body;
+            try {
+                 body = toByteArray(response.getEntity());
+            } catch (Exception fatal) {
+                throw new RuntimeException("Could not read body from runtime", fatal);
+            }
+            return new LambdaEvent(body, getEventContext(response));
+        }
+
+        private static String getFirstHeader(HttpResponse response, String headerName) {
+            // TODO ideally collect all null values before throwing, quick and dirty way here
+            return Optional.ofNullable(response.getFirstHeader(headerName))
+                .map(Header::getValue)
+                .orElseThrow(() -> new IllegalArgumentException(
+                    String.format("Null %s header from runtime", headerName)));
+        }
+
+        private static Context getEventContext(HttpResponse response) {
+            return new ContextBuilder()
+                .setAwsRequestId(getFirstHeader(response, "Lambda-Runtime-Aws-Request-Id"))
+                .setInvokedFunctionArn(getFirstHeader(response, "Lambda-Runtime-Invoked-Function-Arn"))
+                .setTraceId(getFirstHeader(response, "Lambda-Runtime-Trace-Id"))
+                .setRequestDeadline(getFirstHeader(response, "Lambda-Runtime-Deadline-Ms"))
+                // TODO handle cognito and friends
+                .createContext();
+        }
+
+        private static byte[] toByteArray(HttpEntity entity) {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            try {
+                entity.writeTo(baos);
+            } catch (Exception fatal) {
+                throw new RuntimeException("Unable to extract body", fatal);
+            }
+            return baos.toByteArray();
+        }
+
+        public byte[] getEvent() {
+            return event;
+        }
+
+        public Context getContext() {
+            return context;
+        }
+    }
+
+    public class Config {
+        public static String getEndpoint() {
+            return "http://" + System.getenv("AWS_LAMBDA_RUNTIME_API");
+        }
+
+        public static String getMemory() {
+            return System.getenv("AWS_LAMBDA_FUNCTION_MEMORY_SIZE");
+        }
+
+        public static String getLogGroup() {
+            return System.getenv("AWS_LAMBDA_LOG_GROUP_NAME");
+        }
+
+        public static String getLogStream() {
+            return System.getenv("AWS_LAMBDA_LOG_STREAM_NAME");
+        }
+
+        public static String getFunctionName() {
+            return System.getenv("AWS_LAMBDA_FUNCTION_NAME");
+        }
+
+        public static String getFunctionVersion() {
+            return System.getenv("AWS_LAMBDA_FUNCTION_VERSION");
+        }
+    }
 }
