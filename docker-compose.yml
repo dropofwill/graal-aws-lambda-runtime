@@ -1,0 +1,8 @@
+version: '2'
+
+services:
+  package:
+    build: .
+    volumes:
+      - ./mount:/app
+    working_dir: /app
