@@ -1,5 +1,6 @@
 package io.github.dropofwill;
 
+import io.github.dropofwill.ApacheRuntimeClient.LambdaEvent;
 import org.apache.http.HttpResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

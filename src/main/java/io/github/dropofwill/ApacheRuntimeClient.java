@@ -1,6 +1,5 @@
 package io.github.dropofwill;
 
-import io.github.dropofwill.RuntimeClient.LambdaEvent;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -48,7 +47,7 @@ public class ApacheRuntimeClient {
         HttpResponse response = null;
         try {
             response = client.execute(request);
-            return LambdaEvent.fromResponse(response);
+            return new LambdaEvent(response);
         } catch (IOException fatal) {
             throw new RuntimeException("Could not communicate with runtime", fatal);
         } finally {
@@ -124,23 +123,19 @@ public class ApacheRuntimeClient {
         }
     }
 
-    public class LambdaEvent {
+    public static class LambdaEvent {
         private final byte[] event;
         private final Context context;
 
-        LambdaEvent(byte[] event, Context context) {
-            this.event = event;
-            this.context = context;
-        }
-
-        public static LambdaEvent fromResponse(HttpResponse response) {
+        LambdaEvent(HttpResponse response) {
             byte[] body;
             try {
-                 body = toByteArray(response.getEntity());
+                body = toByteArray(response.getEntity());
             } catch (Exception fatal) {
                 throw new RuntimeException("Could not read body from runtime", fatal);
             }
-            return new LambdaEvent(body, getEventContext(response));
+            this.event = body;
+            this.context = LambdaEvent.getEventContext(response);
         }
 
         private static String getFirstHeader(HttpResponse response, String headerName) {
@@ -180,7 +175,7 @@ public class ApacheRuntimeClient {
         }
     }
 
-    public class Config {
+    public static class Config {
         public static String getEndpoint() {
             return "http://" + System.getenv("AWS_LAMBDA_RUNTIME_API");
         }

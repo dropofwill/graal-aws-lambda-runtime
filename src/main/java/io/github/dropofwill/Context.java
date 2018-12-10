@@ -4,9 +4,6 @@ import com.amazonaws.services.lambda.runtime.ClientContext;
 import com.amazonaws.services.lambda.runtime.CognitoIdentity;
 import java.util.Optional;
 
-/**
- *
- */
 class Context {
     private String awsRequestId;
     private String invokedFunctionArn;
