@@ -6,3 +6,12 @@ services:
     volumes:
       - ./mount:/app
     working_dir: /app
+    # Send the raw zip to stdout to do whatever with
+    command: cat ./lambda.zip
+  run:
+    build: .
+    volumes:
+      - ./mount:/app
+    working_dir: /app
+    # Run the actual lambda locally
+    command: ./bootstrap
