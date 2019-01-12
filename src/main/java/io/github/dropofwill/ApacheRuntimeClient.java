@@ -3,6 +3,7 @@ package io.github.dropofwill;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Optional;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
@@ -50,12 +51,10 @@ public class ApacheRuntimeClient {
             return new LambdaEvent(response);
         } catch (IOException fatal) {
             throw new RuntimeException("Could not communicate with runtime", fatal);
-        } finally {
-            if (response != null) EntityUtils.consumeQuietly(response.getEntity());
         }
     }
 
-    public HttpResponse succes(String requestId, byte[] responseBody) {
+    public HttpResponse success(String requestId, byte[] responseBody) {
         BasicHttpEntity body = new BasicHttpEntity();
         body.setContent(new ByteArrayInputStream(responseBody));
         String uri = String.format("%s/%s/runtime/invocation/%s/response",
@@ -95,6 +94,7 @@ public class ApacheRuntimeClient {
 
         try {
             response = client.execute(request);
+            logger.debug("Invocation error response=%s", response);
         } catch (IOException fatal) {
             throw new RuntimeException("Could not communicate with runtime", fatal);
         } finally {
@@ -116,6 +116,7 @@ public class ApacheRuntimeClient {
 
         try {
             response = client.execute(request);
+            logger.debug("Initialization error response=%s", response);
         } catch (IOException fatal) {
             throw new RuntimeException("Could not communicate with runtime", fatal);
         } finally {
@@ -123,19 +124,35 @@ public class ApacheRuntimeClient {
         }
     }
 
-    public static class LambdaEvent {
-        private final byte[] event;
+    public static class LambdaEvent implements AutoCloseable {
+//        private final byte[] event;
+        private final InputStream event;
         private final Context context;
 
         LambdaEvent(HttpResponse response) {
-            byte[] body;
+//            byte[] body;
+//            try {
+//                body = toByteArray(response.getEntity());
+//            } catch (Exception fatal) {
+//                throw new RuntimeException("Could not read body from runtime", fatal);
+//            }
+//            this.event = body;
+            InputStream inputStream;
             try {
-                body = toByteArray(response.getEntity());
-            } catch (Exception fatal) {
+                inputStream = response.getEntity().getContent();
+            } catch (IOException fatal) {
                 throw new RuntimeException("Could not read body from runtime", fatal);
             }
-            this.event = body;
+            this.event = inputStream;
             this.context = LambdaEvent.getEventContext(response);
+        }
+
+        public void close() {
+            if (event != null) {
+                try {
+                    event.close();
+                } catch (IOException ignore) {}
+            }
         }
 
         private static String getFirstHeader(HttpResponse response, String headerName) {
@@ -166,15 +183,20 @@ public class ApacheRuntimeClient {
             return baos.toByteArray();
         }
 
-        public byte[] getEvent() {
+        public InputStream getEvent() {
             return event;
         }
+
+//        public byte[] getEvent() {
+//            return event;
+//        }
 
         public Context getContext() {
             return context;
         }
     }
 
+    // TODO panic if these variables aren't set
     public static class Config {
         public static String getEndpoint() {
             return "http://" + System.getenv("AWS_LAMBDA_RUNTIME_API");

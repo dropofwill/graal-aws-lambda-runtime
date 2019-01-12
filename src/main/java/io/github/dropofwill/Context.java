@@ -2,9 +2,9 @@ package io.github.dropofwill;
 
 import com.amazonaws.services.lambda.runtime.ClientContext;
 import com.amazonaws.services.lambda.runtime.CognitoIdentity;
-import java.util.Optional;
+import com.amazonaws.services.lambda.runtime.LambdaLogger;
 
-class Context {
+class Context implements com.amazonaws.services.lambda.runtime.Context {
     private String awsRequestId;
     private String invokedFunctionArn;
     private String traceId;
@@ -27,6 +27,26 @@ class Context {
         return awsRequestId;
     }
 
+    @Override
+    public String getLogGroupName() {
+        return null;
+    }
+
+    @Override
+    public String getLogStreamName() {
+        return null;
+    }
+
+    @Override
+    public String getFunctionName() {
+        return null;
+    }
+
+    @Override
+    public String getFunctionVersion() {
+        return null;
+    }
+
     public String getInvokedFunctionArn() {
         return invokedFunctionArn;
     }
@@ -39,11 +59,26 @@ class Context {
         return requestDeadline;
     }
 
-    public Optional<CognitoIdentity> getIdentity() {
-        return Optional.ofNullable(identity);
+    public CognitoIdentity getIdentity() {
+        return identity;
     }
 
-    public Optional<ClientContext> getClientContext() {
-        return Optional.ofNullable(clientContext);
+    public ClientContext getClientContext() {
+        return clientContext;
+    }
+
+    @Override
+    public int getRemainingTimeInMillis() {
+        return 0;
+    }
+
+    @Override
+    public int getMemoryLimitInMB() {
+        return 0;
+    }
+
+    @Override
+    public LambdaLogger getLogger() {
+        return null;
     }
 }
