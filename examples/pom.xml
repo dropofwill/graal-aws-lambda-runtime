@@ -1,0 +1,27 @@
+<project
+  xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <artifactId>examples</artifactId>
+  <version>0.0.1</version>
+  <packaging>pom</packaging>
+  <parent>
+    <groupId>com.github.dropofwill</groupId>
+    <artifactId>graal-aws-lambda-runtime</artifactId>
+    <version>0.0.1</version>
+  </parent>
+
+  <name>examples</name>
+
+  <modules>
+    <module>request_stream_handler_example</module>
+    <!-- <module>examples</module> -->
+  </modules>
+
+  <properties>
+    <maven.deploy.skip>true</maven.deploy.skip>
+  </properties>
+</project>
+
