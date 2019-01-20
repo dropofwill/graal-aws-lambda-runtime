@@ -4,17 +4,17 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>io.github.dropofwill</groupId>
-  <artifactId>request_stream_handler_example</artifactId>
+  <groupId>io.github.dropofwill.examples.stream</groupId>
+  <artifactId>request-stream-handler</artifactId>
   <version>0.0.1</version>
   <packaging>jar</packaging>
 
-  <name>request_stream_handler_example</name>
+  <name>request-stream-handler</name>
 
   <dependencies>
     <dependency>
       <groupId>io.github.dropofwill</groupId>
-      <artifactId>java_runtime</artifactId>
+      <artifactId>java-runtime</artifactId>
       <version>0.0.1</version>
       <scope>compile</scope>
     </dependency>
@@ -54,18 +54,18 @@
             <phase>package</phase>
             <goals><goal>shade</goal></goals>
             <configuration>
-               <transformers>
+               <!-- <transformers>
                  <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                   <mainClass>io.github.dropofwill.HelloLambdaJvm</mainClass>
+                   <mainClass>io.github.dropofwill.JvmEntrypoint</mainClass>
                  </transformer>
-               </transformers>
+               </transformers> -->
 
               <!-- GraalVM Build -->
-              <!--<transformers>-->
-                <!--<transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">-->
-                  <!--<mainClass>io.github.dropofwill.HelloLambda</mainClass>-->
-                <!--</transformer>-->
-              <!--</transformers>-->
+              <transformers>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                  <mainClass>io.github.dropofwill.GraalEntrypoint</mainClass>
+                </transformer>
+              </transformers>
               <minimizeJar>
                 true
               </minimizeJar>

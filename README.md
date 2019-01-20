@@ -4,11 +4,18 @@ This project demonstrates using the Graal's SubstrateVM native-image capabilitie
 
 ## Usage
 
-Create a Fat Jar with a main method like the following (see example HelloLambda):
+GraalVM supports reflection, but in an awkward way (basically you have to ahead of time tell the compiler what reflections will resolve to), so there are some slight differences for end users than the Java runtime AWS maintains.
+
+### RequestStramHanlder
+
+The low level RequestStreamHandler interface from AWS is implemented, so the only difference for end users is to create a fat jar that kicks off the runtime.
 
 ```
-private static final RequestHandler<byte[], byte[]> handler =
-  (input, context) -> "Hello world".getBytes();
+private static final RequestStreamHandler handler = (inputStream, outputStream, context) -> {
+    String input = new BufferedReader(new InputStreamReader(inputStream)).lines()
+            .collect(Collectors.joining("\n"));
+    outputStream.write(("Hello world and " + input).getBytes());
+};
 
 public static void main(String[] args) {
     Runtime.with(handler);

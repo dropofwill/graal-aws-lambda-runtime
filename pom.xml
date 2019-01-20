@@ -12,7 +12,7 @@
   <name>graal-aws-lambda-runtime</name>
 
   <modules>
-    <module>java_runtime</module>
+    <module>java-runtime</module>
     <module>examples</module>
   </modules>
 

@@ -16,8 +16,8 @@
   <name>examples</name>
 
   <modules>
-    <module>request_stream_handler_example</module>
-    <!-- <module>examples</module> -->
+    <module>request-stream-handler</module>
+    <module>request-handler</module>
   </modules>
 
   <properties>
